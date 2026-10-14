@@ -2,6 +2,7 @@
 import { createRequire } from 'node:module';
 import { Command } from 'commander';
 import { registerListCommand } from './commands/list.js';
+import { registerAddCommand } from './commands/add.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
@@ -22,6 +23,8 @@ program
   .action(() => {
     console.log(`VaultCLI v${version} is running.`);
   });
+
+registerAddCommand(program);
 
 // With no arguments, show help and exit successfully instead of erroring.
 if (process.argv.length <= 2) {
