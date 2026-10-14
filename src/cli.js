@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { createRequire } from 'node:module';
 import { Command } from 'commander';
+import { registerListCommand } from './commands/list.js';
 import { registerAddCommand } from './commands/add.js';
 
 const require = createRequire(import.meta.url);
@@ -12,6 +13,8 @@ program
   .name('vault')
   .description('VaultCLI: a local-first password manager (early stage, not ready for real passwords)')
   .version(version);
+
+registerListCommand(program);
 
 // Temporary command to confirm the CLI is wired up. It does not inspect any vault.
 program
