@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import { Command } from 'commander';
 import { registerListCommand } from './commands/list.js';
 import { registerAddCommand } from './commands/add.js';
+import { registerGetCommand } from './commands/get.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
@@ -25,6 +26,7 @@ program
   });
 
 registerAddCommand(program);
+registerGetCommand(program);
 
 // With no arguments, show help and exit successfully instead of erroring.
 if (process.argv.length <= 2) {
