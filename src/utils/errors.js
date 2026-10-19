@@ -1,0 +1,23 @@
+export class VaultError extends Error {
+  constructor(code, message, { details, cause } = {}) {
+    super(message, { cause });
+    this.name = 'VaultError';
+    this.code = code;
+    this.details = details;
+  }
+}
+
+export const ErrorCode = Object.freeze({
+  VAULT_NOT_FOUND: 'VAULT_NOT_FOUND',
+  VAULT_CORRUPTED: 'VAULT_CORRUPTED',
+  VAULT_UNSUPPORTED_FORMAT: 'VAULT_UNSUPPORTED_FORMAT',
+  VAULT_UNSUPPORTED_VERSION: 'VAULT_UNSUPPORTED_VERSION',
+  DECRYPTION_FAILED: 'DECRYPTION_FAILED',
+  STORAGE_ERROR: 'STORAGE_ERROR',
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+  VAULT_ALREADY_EXISTS: 'VAULT_ALREADY_EXISTS',
+  INVALID_INPUT: 'INVALID_INPUT',
+  CREDENTIAL_NOT_FOUND: 'CREDENTIAL_NOT_FOUND',
+  CREDENTIAL_ALREADY_EXISTS: 'CREDENTIAL_ALREADY_EXISTS',
+  OPERATION_CANCELLED: 'OPERATION_CANCELLED',
+});

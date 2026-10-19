@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { createRequire } from 'node:module';
 import { Command } from 'commander';
+import { registerInitCommand } from './commands/init.js';
+import { VaultError } from './utils/errors.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
@@ -21,8 +23,26 @@ program
   });
 
 // With no arguments, show help and exit successfully instead of erroring.
+registerInitCommand(program);
+
+// Show help when no command or option was supplied.
 if (process.argv.length <= 2) {
   program.help();
 }
 
-await program.parseAsync(process.argv);
+try {
+  await program.parseAsync(process.argv);
+} catch (error) {
+  if (
+    error.code === 'commander.helpDisplayed' ||
+    error.code === 'commander.version'
+  ) {
+    process.exitCode = 0;
+  } else if (error instanceof VaultError) {
+    console.error(`Error: ${error.message}`);
+    process.exitCode = 1;
+  } else {
+    console.error('Error: An unexpected error occurred.');
+    process.exitCode = 1;
+  }
+}

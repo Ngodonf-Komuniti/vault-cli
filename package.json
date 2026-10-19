@@ -14,7 +14,8 @@
   },
   "scripts": {
     "dev": "npm link && vault",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node --test"
   },
   "license": "UNLICENSED",
   "private": true,
