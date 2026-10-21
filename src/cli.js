@@ -17,8 +17,6 @@ program
   .description('VaultCLI: a local-first password manager (early stage, not ready for real passwords)')
   .version(version);
 
-registerListCommand(program);
-
 // Temporary command to confirm the CLI is wired up. It does not inspect any vault.
 program
   .command('status')
@@ -27,11 +25,15 @@ program
     console.log(`VaultCLI v${version} is running.`);
   });
 
-registerAddCommand(program);
-registerGetCommand(program);
-
-// With no arguments, show help and exit successfully instead of erroring.
-registerInitCommand(program);
+try {
+  registerAddCommand(program);
+  registerGetCommand(program);
+  registerListCommand(program);
+  registerInitCommand(program);
+} catch (error) {
+  console.error(`Error: ${error.message}`);
+  process.exitCode = 1;
+}
 
 // Show help when no command or option was supplied.
 if (process.argv.length <= 2) {
