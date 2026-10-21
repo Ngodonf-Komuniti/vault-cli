@@ -450,3 +450,6 @@ Everything must be checked off before modules are built in parallel. Each item p
 - [ ] **Command arguments and expected behavior:** [Command behavior](#command-behavior). Open: `vault edit`, `--json` for `list`, clipboard, notes via prompt, global vault path flag, default vault location, non-interactive use.
 - [ ] **Encrypted on-disk envelope contract:** [Encrypted on-disk format](#encrypted-on-disk-format). Open: every item in its open decisions table.
 - [ ] **Handling of sensitive data and error output:** [Sensitive data rules](#sensitive-data-rules).
+
+### Contoh
+Ini initial contoh

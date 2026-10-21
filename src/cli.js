@@ -3,6 +3,9 @@ import { createRequire } from 'node:module';
 import { Command } from 'commander';
 import { registerInitCommand } from './commands/init.js';
 import { VaultError } from './utils/errors.js';
+import { registerListCommand } from './commands/list.js';
+import { registerAddCommand } from './commands/add.js';
+import { registerGetCommand } from './commands/get.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
@@ -14,6 +17,8 @@ program
   .description('VaultCLI: a local-first password manager (early stage, not ready for real passwords)')
   .version(version);
 
+registerListCommand(program);
+
 // Temporary command to confirm the CLI is wired up. It does not inspect any vault.
 program
   .command('status')
@@ -21,6 +26,9 @@ program
   .action(() => {
     console.log(`VaultCLI v${version} is running.`);
   });
+
+registerAddCommand(program);
+registerGetCommand(program);
 
 // With no arguments, show help and exit successfully instead of erroring.
 registerInitCommand(program);
