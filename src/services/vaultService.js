@@ -1,9 +1,9 @@
 
-import { randomUUID } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
 import { encryptVault, decryptVault } from '../crypto/vaultCrypto.js'
 import { vaultExists, writeVaultFile, readVaultFile } from '../storage/vaultFile.js'
 import { VaultError, ErrorCode } from '../utils/errors.js'
-import { validateCredentialInput, validateMasterPassword, validateVaultData } from '../utils/validation.js'
+import { validateCredentialInput, validateMasterPassword, validateVaultData, validateGenerateOptions } from '../utils/validation.js'
 
 export async function initVault({ vaultPath, masterPassword } = {}) {
   validateMasterPassword(masterPassword)
@@ -86,4 +86,16 @@ export async function listCredentials(ctx) {
   const sortSummaries = [...summaries].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
   return sortSummaries;
+}
+
+const UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
+const NUMBERS = "1234567890";
+const SYMBOLS = "!@#$%^&*()_+-={}[]|:;<>,.?/~";
+export function generatePassword(options) {
+  const generateOption = validateGenerateOptions(options);
+  const pool = UPPERCASE + LOWERCASE + NUMBERS + ( generateOption.symbols ? SYMBOLS : "" );
+
+  const chars = Array.from({ length: generateOption.length }, () => pool[randomInt(pool.length)]);
+  return chars.join("");
 }
