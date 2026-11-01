@@ -1,3 +1,8 @@
+import { VaultError, ErrorCode } from '../utils/errors.js';
+import { promptSecret } from '../utils/promptSecret.js';
+import { addCredential, generatePassword } from '../services/vaultService.js';
+import { resolveVaultPath } from '../storage/vaultFile.js';
+
 export function registerAddCommand(program) {
   program
     .command('add <name>')
@@ -7,17 +12,28 @@ export function registerAddCommand(program) {
     .option('--generate', 'Generate a random password for the credential')
     .option('--length <n>', 'Length of the generated password', parseInt)
     .description('Add a new credential to the vault')
-    .action((name, options) => {
+    .action(async (name, options) => {
       const { username = '', url = '', notes = '', generate, length } = options;
       if (length && !generate) {
-        // TODO: Change to VaultError(INVALID_INPUT) when error.js is implemented.
-        throw new Error('--length can only be used with --generate');
+        throw new VaultError(
+          ErrorCode.INVALID_INPUT,
+          '--length can only be used with --generate');
       }
-      console.log(`Adding credential: ${name}`);
-      console.log(`Username: ${username}`);
-      console.log(`URL: ${url}`);
-      console.log(`Notes: ${notes}`);
-      console.log(`Generate Password: ${generate}`);
-      console.log(`Password Length: ${length}`);
+      const masterPassword = await promptSecret('master password');
+
+      let password;
+      if (generate) {
+        password = generatePassword( { length } );
+      } else {
+        password = await promptSecret('password', { confirm: true});
+      }
+
+      const vaultPath = resolveVaultPath();
+      const ctx = { vaultPath, masterPassword };
+      const input = { name, password, username, url, notes };
+
+      await addCredential(ctx, input);
+
+      console.log(`Added "${name}".`);
     });
 }
