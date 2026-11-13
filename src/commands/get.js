@@ -1,45 +1,25 @@
+import { getCredential } from '../services/vaultService.js'
+import { resolveVaultPath } from '../storage/vaultFile.js'
+import { promptSecret } from '../utils/promptSecret.js'
+
 export function registerGetCommand(program) {
-    // Command Register
-    program
-        .command('get <name>')
-        .description("Get one credential key from storage")
-        .action((name) => {
-            // TODO : Current credential keys are dummy data. Change to getCredential() when available.
-            const credentials = [
-                {
-                    name : 'example.com',
-                    username : 'user1',
-                    url : 'https://example.com',
-                    updatedAt : '2026-10-13T00:00:00.000Z'
-                },
-                {
-                    name : 'testsite.com',
-                    username : 'user2',
-                    url : 'https://testsite.com',
-                    updatedAt : '2026-10-14T00:00:00.000Z'
-                },
-                {
-                    name : 'guthib.com',
-                    username : 'user3',
-                    url : 'https://guthib.com',
-                    updatedAt : '2026-10-14T00:00:00.000Z'
-                },
-            ];
-            const credential = credentials.find(
-                (cred) => cred.name === name,
-            );
+  program
+    .command('get <name-or-id>')
+    .description('Get one credential from the vault')
+    .option('--show', 'Show the password and notes')
+    .action(async (nameOrId, options) => {
+      const vaultPath = resolveVaultPath()
+      const masterPassword = await promptSecret('master password')
+      const credential = await getCredential(
+        { vaultPath, masterPassword },
+        nameOrId,
+      )
 
-            if(!credential) {
-                // TODO : Change with VaultError(CREDENTIAL_NOT_FOUND) when implemented
-                throw new Error(`Credential ${name} Not Found!`)
-            }
-
-            console.log(`Credential Name : ${credential.name}`);
-            console.log(`Credential username : ${credential.username}`);
-            console.log(`URL : ${credential.url}`);
-            console.log(`Updated At : ${credential.updatedAt}`)
-            
-        })
-
-
+      console.log(`Name: ${credential.name}`)
+      console.log(`Username: ${credential.username}`)
+      console.log(`URL: ${credential.url}`)
+      console.log(`Password: ${options.show ? credential.password : '********'}`)
+      console.log(`Notes: ${options.show ? credential.notes : '********'}`)
+      console.log(`Updated at: ${credential.updatedAt}`)
+    })
 }
