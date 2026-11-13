@@ -2,7 +2,7 @@
 
 VaultCLI is a local-first password manager for the command line, built with Node.js.
 
-> **Warning:** VaultCLI is an early-stage project. It does **not** encrypt or store anything yet and is **not ready for storing real passwords**.
+> **Warning:** VaultCLI is an early-stage project. It now supports encrypted local storage and basic credential commands, but it has not received a security audit and is **not ready for storing real passwords**.
 
 ## Prerequisites
 
@@ -51,20 +51,22 @@ Remove the link when you're done with `npm unlink -g vault-cli`.
 | `vault --help`    | Show usage information                                            |
 | `vault --version` | Show the installed version                                        |
 | `vault status`    | Temporary: confirms the CLI is running. It does not inspect a vault. |
+| `vault init`      | Create a new encrypted vault                                      |
+| `vault add <name>`| Add a credential to the vault                                     |
+| `vault get <name-or-id>` | Display one credential; secrets are masked unless `--show` is used |
+| `vault list`      | List credential summaries without passwords or notes               |
 
 ## Roadmap
 
-Planned features, none of which are implemented yet:
+Further features not implemented yet:
 
-- `vault init`: create a new encrypted vault protected by a master password
-- `vault add` / `vault get` / `vault list` / `vault delete`: manage stored credentials
-- `vault generate`: generate strong passwords
-- Encryption at rest using Node.js built-in crypto
-- Local file-based storage with no cloud dependency
+- `vault delete` and `vault edit`
+- Dedicated `vault generate` command
+- Additional security review and production hardening
 
 ## Function Contracts & Data Model
 
-> **Status: proposed, not implemented.** This section is the shared contract the team agrees on before building modules in parallel. None of the modules, functions, or commands below exist yet; the only implemented commands are listed under [Current CLI commands](#current-cli-commands). Anything marked **TBD — team agreement required** is intentionally undecided.
+> **Status:** This section documents the project contract. `init`, `add`, `get`, and `list` are implemented; some other functions and decisions remain planned or marked **TBD — team agreement required**.
 
 ### Conventions
 
@@ -175,7 +177,7 @@ Rules that need vault state, such as name uniqueness or whether a credential exi
 
 - `updateCredential` is part of the service contract, but no CLI command calls it yet. Whether to add a `vault edit` command is **TBD**.
 - `nameOrId` first matches `id` exactly, then matches `name` case-insensitively after trimming.
-- `generatePassword` uses the `node:crypto` CSPRNG (`randomInt`), never `Math.random`. Defaults: `length: 20`, `symbols: true`. The character set always includes upper case, lower case, and digits. The exact symbol set is **TBD**.
+- `generatePassword` uses the `node:crypto` CSPRNG (`randomInt`), never `Math.random`. Defaults: `length: 20`, `symbols: true`. Every generated password includes upper case, lower case, digits, and (when enabled) a symbol from `!@#$%^&*()-_=+[]{}:,.?`.
 - Internal flow (not exported):
 
   ```text
@@ -334,20 +336,20 @@ Optional fields are always stored as `""`, never `undefined` or `null`, so every
 
 ### Encrypted on-disk format
 
-> **Not implemented.** Only the boundary between modules is agreed here. The cryptographic design is **TBD — team agreement required**.
+The current implementation uses an encrypted JSON envelope. The following diagram describes its module boundaries:
 
 ```text
 write: VaultData ──encryptVault (Crypto)──▶ EncryptedEnvelope ──writeVaultFile (Storage)──▶ vault file
 read:  vault file ──readVaultFile (Storage)──▶ EncryptedEnvelope ──decryptVault (Crypto)──▶ VaultData
 ```
 
-Conceptual envelope (every value is a placeholder):
+Envelope structure:
 
 ```js
 {
   formatVersion: 1,       // envelope format version, NOT the plaintext `version`
-  kdf:    { algorithm: "TBD", params: { /* TBD */ }, salt: "<base64>" },
-  cipher: { algorithm: "TBD", nonce: "<base64>", authTag: "<base64>" },
+  kdf:    { algorithm: "PBKDF2-HMAC-SHA-256", params: { /* parameters */ }, salt: "<base64>" },
+  cipher: { algorithm: "AES-256-GCM", nonce: "<base64>", authTag: "<base64>" },
   ciphertext: "<base64>"  // encrypted VaultData
 }
 ```
@@ -359,19 +361,19 @@ Agreed so far:
 - The nonce is new for every encryption.
 - Storage never interprets crypto fields. Crypto never touches the file system.
 
-| Open decision | Status |
+| Decision | Status |
 | --- | --- |
-| KDF algorithm and parameters | **TBD — team agreement required** |
-| Cipher (Node built-in candidates include AES-256-GCM and ChaCha20-Poly1305; nothing chosen yet) | **TBD — team agreement required** |
-| Encoding: JSON with base64 fields, or binary | **TBD — team agreement required** |
-| Whether envelope metadata is authenticated (AAD) | **TBD — team agreement required** |
-| Salt: per vault or new on every write | **TBD — team agreement required** |
-| File name, extension, and default location | **TBD — team agreement required** |
+| KDF algorithm and parameters | PBKDF2-HMAC-SHA-256, 600,000 iterations, 32-byte key |
+| Cipher | AES-256-GCM |
+| Encoding | JSON envelope with base64-encoded binary fields |
+| Whether envelope metadata is authenticated (AAD) | Yes |
+| Salt | Random salt generated for every encryption |
+| File name, extension, and default location | `vault.json` under `~/.local/share/vault-cli/` by default |
 | Changing the master password (re-encryption flow) | **TBD — team agreement required** |
 
 ### Command behavior
 
-All commands except `generate` need an existing vault and ask for the master password with a hidden prompt.
+`init` creates a vault. `add`, `get`, and `list` require an existing vault and ask for the master password with a hidden prompt. `delete` and the dedicated `generate` command are not implemented yet.
 
 | Command | Service call | Shows secrets? |
 | --- | --- | --- |
@@ -379,8 +381,8 @@ All commands except `generate` need an existing vault and ask for the master pas
 | `vault add` | `addCredential` (+ `generatePassword` with `--generate`) | No |
 | `vault get` | `getCredential` | Only with `--show` |
 | `vault list` | `listCredentials` | No |
-| `vault delete` | `deleteCredential` | No |
-| `vault generate` | `generatePassword` | Yes, by design |
+| `vault delete` (planned) | `deleteCredential` | No |
+| `vault generate` (planned) | `generatePassword` | Yes, by design |
 
 #### `vault init`
 
